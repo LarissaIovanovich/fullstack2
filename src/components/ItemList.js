@@ -1,4 +1,3 @@
-// src/components/ItemList.js
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
@@ -51,16 +50,32 @@ function ItemList({ category }) {
   }, [category, cachedItems, lastFetchTime, fetchData]);
 
   return (
-    <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+    <div style={{
+      marginTop: "127px",
+      marginBottom: '2px',
+      border: '1px solid #ccc',
+      padding: '10px',
+      background: 'rgba(255, 255, 255, 0.21)',
+      borderRadius: '16px',
+      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+      backdropFilter: 'blur(12.9px)',
+      WebkitBackdropFilter: 'blur(12.9px)',
+      maxHeight: '60vh',
+      overflowY: 'auto',
+      alignItems: "center",
+      marginLeft: "-5px",
+      marginRight: "-5px"
+    }}>
       <h1>Lista de {category}</h1>
       {loading ? (
-        <p>Carregando...</p>
+        <p style={{ fontSize: "20px" }}>Carregando...</p>
       ) : (
-        <ul>
+        <ul className="custom-list">
           {items.map(item => (
-            <li key={item.id}>{item.name}</li>
+          <li key={item.id} className="list-item">{item.name}</li>
           ))}
         </ul>
+
       )}
     </div>
   );
