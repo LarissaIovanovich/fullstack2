@@ -1,10 +1,39 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
 
 function ItemList({ category }) {
   const [items, setItems] = useState([]);
+  const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const searchTextRef = useRef('');
+
+  const handleSearch = async () => {
+    const searchText = searchTextRef.current.value;
+
+    if (searchText.trim() === '' || searchText.length < 1) {
+      setErrorMessage('Por favor, insira pelo menos 1 caracter para pesquisar.');
+      setItems([]);
+      return;
+    }
+  
+    try {
+      const response = await axios.get(`https://mhw-db.com/${category}?q=${searchText}`);
+      const searchResults = response.data;
+  
+      if (searchResults.length === 0) {
+        setErrorMessage('Nenhum resultado encontrado.');
+        setItems([]);
+      } else {
+        setErrorMessage('');
+        setItems(searchResults);
+      }
+    } catch (error) {
+      console.error('Erro ao pesquisar os itens:', error);
+      setErrorMessage('Erro ao realizar a pesquisa.');
+      setItems([]);
+    }
+  };
 
   const fetchData = useMemo(() => {
     return () => {
@@ -48,6 +77,8 @@ function ItemList({ category }) {
 
     fetchDataAndCache();
   }, [category, cachedItems, lastFetchTime, fetchData]);
+  
+  
 
   return (
     <div style={{
@@ -67,6 +98,12 @@ function ItemList({ category }) {
       marginRight: "-5px"
     }}>
       <h1>Lista de {category}</h1>
+      <div>
+      <input type="text" id={`${category}-search`} className="form-control" maxLength="50" minLength="1" placeholder="Pesquisar..." ref={searchTextRef} />
+      <button onClick={handleSearch}>Buscar</button>
+      <p id={`${category}-error-message`} className="error-message">{errorMessage}</p>
+      {/* lista de itens aqui */}
+      </div>
       {loading ? (
         <p style={{ fontSize: "20px" }}>Carregando...</p>
       ) : (
