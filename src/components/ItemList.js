@@ -1,29 +1,60 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
-
 function ItemList({ category }) {
   const [items, setItems] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const searchTextRef = useRef('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  const fetchData = useMemo(() => {
+    return async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(`https://mhw-db.com/${category}`);
+        setItems(response.data);
+        setLoading(false);
+        localStorage.setItem(`items_${category}`, JSON.stringify(response.data));
+        localStorage.setItem(`lastFetchTime_${category}`, Date.now());
+      } catch (error) {
+        console.error('Erro ao obter os itens:', error);
+        setLoading(false);
+      }
+    };
+  }, [category]);
+
+  useEffect(() => {
+    setSelectedCategory(category); // Atualiza a categoria selecionada
+    const cachedData = localStorage.getItem(`items_${category}`);
+    const lastFetchTime = localStorage.getItem(`lastFetchTime_${category}`);
+    if (cachedData && lastFetchTime && (Date.now() - parseInt(lastFetchTime, 10) < 10 * 60 * 1000)) {
+      setItems(JSON.parse(cachedData));
+      setLoading(false);
+    } else {
+      fetchData();
+    }
+  }, [category, fetchData]);
 
   const handleSearch = async () => {
-    const searchText = searchTextRef.current.value;
+    const searchText = searchTextRef.current.value.trim().toLowerCase();
 
-    if (searchText.trim() === '' || searchText.length < 1) {
+    if (searchText === '') {
       setErrorMessage('Por favor, insira pelo menos 1 caracter para pesquisar.');
-      setItems([]);
+      fetchData(); // Recarrega a lista completa
       return;
     }
-  
+
     try {
-      const response = await axios.get(`https://mhw-db.com/${category}?q=${searchText}`);
-      const searchResults = response.data;
-  
+      const response = await axios.get(`https://mhw-db.com/${category}`);
+      const allItems = response.data;
+
+      const searchResults = allItems.filter(item =>
+        item.name.toLowerCase().includes(searchText)
+      );
+
       if (searchResults.length === 0) {
         setErrorMessage('Nenhum resultado encontrado.');
-        setItems([]);
       } else {
         setErrorMessage('');
         setItems(searchResults);
@@ -34,51 +65,6 @@ function ItemList({ category }) {
       setItems([]);
     }
   };
-
-  const fetchData = useMemo(() => {
-    return () => {
-      setLoading(true);
-      axios.get(`https://mhw-db.com/${category}`)
-        .then(response => {
-          setItems(response.data);
-          setLoading(false);
-          localStorage.setItem(`items_${category}`, JSON.stringify(response.data));
-          localStorage.setItem(`lastFetchTime_${category}`, Date.now());
-        })
-        .catch(error => {
-          console.error('Erro ao obter os itens:', error);
-          setLoading(false);
-        });
-    };
-  }, [category]);
-
-  const cachedItems = useMemo(() => {
-    const cachedData = localStorage.getItem(`items_${category}`);
-    if (cachedData) {
-      return JSON.parse(cachedData);
-    }
-    return [];
-  }, [category]);
-
-  const lastFetchTime = useMemo(() => {
-    const timestamp = localStorage.getItem(`lastFetchTime_${category}`);
-    return timestamp ? parseInt(timestamp, 10) : null;
-  }, [category]);
-
-  useEffect(() => {
-    const fetchDataAndCache = async () => {
-      if (cachedItems.length > 0 && lastFetchTime && (Date.now() - lastFetchTime < 10 * 60 * 1000)) {
-        setItems(cachedItems);
-        setLoading(false);
-      } else {
-        await fetchData();
-      }
-    };
-
-    fetchDataAndCache();
-  }, [category, cachedItems, lastFetchTime, fetchData]);
-  
-  
 
   return (
     <div style={{
@@ -97,23 +83,26 @@ function ItemList({ category }) {
       marginLeft: "-5px",
       marginRight: "-5px"
     }}>
-      <h1>Lista de {category}</h1>
+      <h1>Lista de {selectedCategory}</h1>
       <div>
-      <input type="text" id={`${category}-search`} className="form-control" maxLength="50" minLength="1" placeholder="Pesquisar..." ref={searchTextRef} />
-      <button onClick={handleSearch}>Buscar</button>
-      <p id={`${category}-error-message`} className="error-message">{errorMessage}</p>
-      {/* lista de itens aqui */}
-      </div>
-      {loading ? (
-        <p style={{ fontSize: "20px" }}>Carregando...</p>
-      ) : (
+        <input 
+          type="text" 
+          id={`${selectedCategory}-search`} 
+          className="form-control" 
+          maxLength="50" 
+          minLength="1" 
+          placeholder="Pesquisar..." 
+          ref={searchTextRef} 
+        />
+        <button onClick={handleSearch}>Buscar</button>
+        <p id={`${selectedCategory}-error-message`} className="error-message">{errorMessage}</p>
+        {loading && <p style={{ fontSize: "20px" }}>Carregando...</p>}
         <ul className="custom-list">
           {items.map(item => (
-          <li key={item.id} className="list-item">{item.name}</li>
+            <li key={item.id} className="list-item">{item.name}</li>
           ))}
         </ul>
-
-      )}
+      </div>
     </div>
   );
 }
