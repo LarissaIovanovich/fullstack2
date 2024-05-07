@@ -1,33 +1,24 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { CategoryProvider } from './context/CategoryContext';
+import CategoryButton from './components/CategoryButton';
 import ItemList from './components/ItemList';
-import Button from '@mui/material/Button'; // Importando o botão da biblioteca
 import './App.css';
 
 function App() {
-  const [currentCategory, setCurrentCategory] = useState(null);
-
-  const handleCategoryClick = (category) => {
-    setCurrentCategory(category);
-  };
+  const categories = ['ailments', 'armor', 'charms', 'decorations', 'events', 'items', 'locations', 'monsters', 'skills', 'weapons'];
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Categorias</h1>
-        <Button variant="contained" onClick={() => handleCategoryClick('ailments')}>Ailments</Button>
-        <Button variant="contained" onClick={() => handleCategoryClick('armor')}>Armor</Button>
-        <Button variant="contained" onClick={() => handleCategoryClick('charms')}>Charms</Button>
-        <Button variant="contained" onClick={() => handleCategoryClick('decorations')}>Decorations</Button>
-        <Button variant="contained" onClick={() => handleCategoryClick('events')}>Events</Button>
-        <Button variant="contained" onClick={() => handleCategoryClick('items')}>Items</Button>
-        <Button variant="contained" onClick={() => handleCategoryClick('locations')}>Locations</Button>
-        <Button variant="contained" onClick={() => handleCategoryClick('monsters')}>Monsters</Button>
-        <Button variant="contained" onClick={() => handleCategoryClick('skills')}>Skills</Button>
-        <Button variant="contained" onClick={() => handleCategoryClick('weapons')}>Weapons</Button>
-
-        {currentCategory && <ItemList category={currentCategory} />}
-      </header>
-    </div>
+    <CategoryProvider>
+      <div className="App">
+        <header className="App-header">
+          <h1>Categorias</h1>
+          {categories.map(category => (
+            <CategoryButton key={category} category={category} />
+          ))}
+          <ItemList />
+        </header>
+      </div>
+    </CategoryProvider>
   );
 }
 
